@@ -1,14 +1,14 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const Course = require('../models/courseModel');
-const courses = require('../config/courses')
+const coursesData = require('../config/coursesData')
 
 const seedCourses = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI);
 
     await Course.deleteMany();
-    await Course.insertMany(courses);
+    await Course.insertMany(coursesData);
 
     console.log('✅ Courses seeded successfully');
     process.exit();

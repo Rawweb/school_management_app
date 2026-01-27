@@ -1,4 +1,4 @@
-const courses = [
+const coursesData = [
   {
     code: 'CSC421',
     title: 'Survey Programming Languages',
@@ -45,4 +45,4 @@ const courses = [
     description: 'Final year project involving design, implementation, and documentation.'
   }
 ];
-module.exports = courses;
+module.exports = coursesData;

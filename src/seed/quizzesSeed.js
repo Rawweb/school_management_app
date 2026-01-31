@@ -4,6 +4,12 @@ const Quiz = require("../models/quizModel");
 const Question = require("../models/questionModel");
 const quizData = require("../config/quizData");
 
+const levelOrderMap = {
+  Basic: 1,
+  Intermediate: 2,
+  Advanced: 3,
+};
+
 const seedQuizzes = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI);
@@ -15,14 +21,16 @@ const seedQuizzes = async () => {
       const quiz = await Quiz.create({
         title: quizItem.title,
         level: quizItem.level,
-        category: "Computer Science"
+        category: "Computer Science",
+        duration: quizItem.duration,
+        levelOrder: levelOrderMap[quizItem.level],
       });
 
       const questions = quizItem.questions.map(q => ({
         quizId: quiz._id,
         questionText: q.questionText,
         options: q.options,
-        correctAnswer: q.correctAnswer
+        correctAnswer: q.correctAnswer,
       }));
 
       await Question.insertMany(questions);
@@ -31,7 +39,7 @@ const seedQuizzes = async () => {
     console.log("✅ Computer Science quizzes seeded successfully");
     process.exit();
   } catch (error) {
-    console.error("❌ Seeding error:", error);
+    console.error("❌ Seeding error:", error.message);
     process.exit(1);
   }
 };

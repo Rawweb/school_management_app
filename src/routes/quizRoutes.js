@@ -4,7 +4,7 @@ const router = express.Router();
 const authMiddleware = require("../middlewares/authMiddleware");
 const {
   getQuizzes,
-  getQuizQuestions,
+  startQuiz,
   submitQuiz,
   getResults
 } = require("../controllers/quizController");
@@ -12,8 +12,9 @@ const {
 router.use(authMiddleware);
 
 router.get("/", getQuizzes);
-router.get("/:quizId/questions", getQuizQuestions);
-router.post("/:quizId/submit", submitQuiz);
 router.get("/results/me", getResults);
+router.post("/:quizId/start", startQuiz);
+router.post("/:quizId/submit", submitQuiz);
+
 
 module.exports = router;

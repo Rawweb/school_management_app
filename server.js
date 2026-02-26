@@ -4,7 +4,7 @@ const dotenv = require('dotenv');
 const connectDB = require('./src/config/db');
 const dns = require('dns');
 dns.setServers(['8.8.8.8', '1.1.1.1']);
- 
+
 //load environment variable
 dotenv.config();
 
@@ -21,7 +21,10 @@ const dashboardRoutes = require('./src/routes/dashboardRoutes');
 const app = express();
 app.use(
   cors({
-    origin: ['http://localhost:5173', 'https://campuss-hub.netlify.app'],
+    origin: [
+      'http://localhost:5173',
+      'https://campuss-hub.netlify.app',
+    ],
     credentials: true,
   })
 );

@@ -2,7 +2,7 @@ const quizData = [
   {
     title: 'Computer Science Basics',
     level: 'Basic',
-    duration: 15,
+    duration: 1,
     questions: [
       {
         questionText: 'What does CPU stand for?',
@@ -105,7 +105,7 @@ const quizData = [
   {
     title: 'Internet & Web Design (CSC 471)',
     level: 'Intermediate',
-    duration: 20,
+    duration: 2.5,
     questions: [
       {
         questionText: 'Who invented the World Wide Web?',
@@ -203,7 +203,7 @@ const quizData = [
   {
     title: 'Object-Oriented Programming (CSC 461)',
     level: 'Advanced',
-    duration: 30,
+    duration: 4.5,
     questions: [
       {
         questionText: 'What is Object-Oriented Programming?',

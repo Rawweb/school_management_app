@@ -6,13 +6,15 @@ const {
   getQuizzes,
   startQuiz,
   submitQuiz,
-  getResults
+  getResults,
+  getActiveAttempt,
 } = require("../controllers/quizController");
 
 router.use(authMiddleware);
 
 router.get("/", getQuizzes);
 router.get("/results/me", getResults);
+router.get("/attempts/active", getActiveAttempt);
 router.post("/:quizId/start", startQuiz);
 router.post("/:quizId/submit", submitQuiz);
 

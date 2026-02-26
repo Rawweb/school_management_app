@@ -4,6 +4,9 @@ const Quiz = require("../models/quizModel");
 const Question = require("../models/questionModel");
 const quizData = require("../config/quizData");
 
+const dns = require('dns');
+dns.setServers(['8.8.8.8', '1.1.1.1']);
+
 const levelOrderMap = {
   Basic: 1,
   Intermediate: 2,

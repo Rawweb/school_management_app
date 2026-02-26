@@ -3,6 +3,37 @@ const Question = require('../models/questionModel');
 const QuizResult = require('../models/quizResultModel');
 const QuizAttempt = require('../models/QuizAttemptModel');
 
+const getAttemptState = (attempt, now = Date.now()) => {
+  const duration = attempt.quizId?.duration;
+  if (typeof duration !== 'number') return { isExpired: true };
+
+  const elapsedMinutes = (now - attempt.startedAt.getTime()) / (1000 * 60);
+  return { isExpired: elapsedMinutes > duration };
+};
+
+const finalizeExpiredAttempt = async attempt => {
+  const quizId = attempt.quizId?._id || attempt.quizId;
+  if (!quizId) return false;
+
+  const existingResult = await QuizResult.findOne({
+    studentId: attempt.studentId,
+    quizId,
+  });
+  if (existingResult) return false;
+
+  const totalQuestions = await Question.countDocuments({ quizId });
+
+  await QuizResult.create({
+    studentId: attempt.studentId,
+    quizId,
+    score: 0,
+    totalQuestions,
+    status: 'Fail',
+  });
+
+  return true;
+};
+
 // get all quizzes
 const getQuizzes = async (req, res) => {
   try {
@@ -40,21 +71,116 @@ const startQuiz = async (req, res) => {
         .json({ message: 'You have already taken this quiz' });
     }
 
+    const attempts = await QuizAttempt.find({
+      studentId: req.student,
+    }).populate('quizId', 'duration title');
+
+    let existingAttempt = null;
+    let activeOtherAttempt = null;
+
+    let finalizedExpiredCurrentQuiz = false;
+
+    for (const attempt of attempts) {
+      const { isExpired } = getAttemptState(attempt);
+      if (isExpired) {
+        await finalizeExpiredAttempt(attempt);
+        if (String(attempt.quizId?._id) === String(quizId)) {
+          finalizedExpiredCurrentQuiz = true;
+        }
+        await QuizAttempt.deleteOne({ _id: attempt._id });
+        continue;
+      }
+
+      if (String(attempt.quizId?._id) === String(quizId)) {
+        existingAttempt = attempt;
+      } else if (!activeOtherAttempt) {
+        activeOtherAttempt = attempt;
+      }
+    }
+
+    if (activeOtherAttempt && !existingAttempt) {
+      return res.status(400).json({
+        message: `You already have an active quiz: ${activeOtherAttempt.quizId?.title || 'quiz in progress'}`,
+      });
+    }
+
+    if (finalizedExpiredCurrentQuiz) {
+      return res.status(400).json({
+        message: 'Quiz time elapsed. Your quiz was submitted automatically.',
+      });
+    }
+
+    if (existingAttempt) {
+      const { isExpired } = getAttemptState(existingAttempt);
+
+      if (isExpired) {
+        await QuizAttempt.deleteOne({ _id: existingAttempt._id });
+      } else {
+        const questions = await Question.find({ quizId }, { correctAnswer: 0 });
+        return res.json({
+          questions,
+          startedAt: existingAttempt.startedAt,
+          resumed: true,
+        });
+      }
+    }
+
     // Create attempt (locks quiz)
-    await QuizAttempt.create({
+    const attempt = await QuizAttempt.create({
       studentId: req.student,
       quizId,
     });
 
     const questions = await Question.find({ quizId }, { correctAnswer: 0 });
-
-    res.json(questions);
+    res.json({
+      questions,
+      startedAt: attempt.startedAt,
+      resumed: false,
+    });
   } catch (err) {
     if (err.code === 11000) {
       return res.status(400).json({ message: 'Quiz already started' });
     }
 
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const getActiveAttempt = async (req, res) => {
+  try {
+    const attempts = await QuizAttempt.find({
+      studentId: req.student,
+    })
+      .populate('quizId', 'title level category levelOrder duration')
+      .sort({ startedAt: -1 });
+
+    let firstActiveAttempt = null;
+
+    for (const attempt of attempts) {
+      const { isExpired } = getAttemptState(attempt);
+      if (isExpired) {
+        await finalizeExpiredAttempt(attempt);
+        await QuizAttempt.deleteOne({ _id: attempt._id });
+        continue;
+      }
+
+      if (!firstActiveAttempt) {
+        firstActiveAttempt = attempt;
+      } else {
+        await QuizAttempt.deleteOne({ _id: attempt._id });
+      }
+    }
+
+    if (firstActiveAttempt) {
+      return res.json({
+        quiz: firstActiveAttempt.quizId,
+        startedAt: firstActiveAttempt.startedAt,
+      });
+    }
+
+    return res.json(null);
+  } catch (err) {
+    return res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -150,4 +276,5 @@ module.exports = {
   startQuiz,
   submitQuiz,
   getResults,
+  getActiveAttempt,
 };

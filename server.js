@@ -19,16 +19,36 @@ const quizRoutes = require('./src/routes/quizRoutes');
 const dashboardRoutes = require('./src/routes/dashboardRoutes');
 
 const app = express();
-app.use(
-  cors({
-    origin: [
-      'http://localhost:5173',
-      'https://campuss-hub.netlify.app',
-      'https://school-management-app-sage-one.vercel.app',
-    ],
-    credentials: true,
-  })
-);
+
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://campuss-hub.netlify.app',
+];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    const isAllowedOrigin =
+      allowedOrigins.includes(origin) ||
+      /^https:\/\/school-management-app-[a-z0-9-]+\.vercel\.app$/.test(
+        origin
+      );
+
+    if (isAllowedOrigin) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
+app.use(cors(corsOptions));
 
 app.use(express.json());
 

@@ -24,6 +24,7 @@ app.use(
     origin: [
       'http://localhost:5173',
       'https://campuss-hub.netlify.app',
+      'https://school-management-app-sage-one.vercel.app/',,
     ],
     credentials: true,
   })

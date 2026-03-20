@@ -3,12 +3,23 @@ const Question = require('../models/questionModel');
 const QuizResult = require('../models/quizResultModel');
 const QuizAttempt = require('../models/QuizAttemptModel');
 
+const getDurationInMinutes = duration => {
+  const [minutesPart, secondsPart = '00'] = Number(duration)
+    .toFixed(2)
+    .split('.');
+
+  const minutes = Number(minutesPart);
+  const seconds = Number(secondsPart);
+
+  return minutes + seconds / 60;
+};
+
 const getAttemptState = (attempt, now = Date.now()) => {
   const duration = attempt.quizId?.duration;
   if (typeof duration !== 'number') return { isExpired: true };
 
   const elapsedMinutes = (now - attempt.startedAt.getTime()) / (1000 * 60);
-  return { isExpired: elapsedMinutes > duration };
+  return { isExpired: elapsedMinutes > getDurationInMinutes(duration) };
 };
 
 const finalizeExpiredAttempt = async attempt => {
@@ -224,7 +235,7 @@ const submitQuiz = async (req, res) => {
 
     const now = Date.now();
     const elapsedMinutes = (now - attempt.startedAt.getTime()) / (1000 * 60);
-    const isExpired = elapsedMinutes > quiz.duration;
+    const isExpired = elapsedMinutes > getDurationInMinutes(quiz.duration);
 
     let score = 0;
 
